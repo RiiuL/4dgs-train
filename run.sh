@@ -16,14 +16,14 @@
 #change test
 #  --da3_depth "../Depth-Anything-3/img/PatterendCutball-close.jpg/da3_results/npy/depth_all_views.npy" \
 python train_4dgs_array_v3.py \
-  --data_dir "../imgall/PatterendCutball-close.jpg" \
+  --data_dir "../imgall/PatterendCutball-close" \
   --focal_length 0.6 \
   --pixel_size 0.00185 \
   --te 0.06 \
   --img_w 80 \
   --img_h 60 \
   --num_points 500 \
-  --iters 5000 \
+  --iters 500 \
   --integration_steps 5 \
   --views_per_step 5 \
   --lambda_ssim 0.2 \
@@ -33,7 +33,8 @@ python train_4dgs_array_v3.py \
   --lr_scale 0.005 \
   --lr_deform 0.001 \
   --warmup_iters 20 \
-  --depth_scale 1.0
+  --depth_scale 1000
   #focal length, pixel size mm
   # te : sec
   # tr : sec
+#--views_per_step 5 \ # 한 iteration 당 몇 개의 카메라로 로스를 계산할 건지

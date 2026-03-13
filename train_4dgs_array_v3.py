@@ -104,6 +104,41 @@ def parse_args():
     return parser.parse_args()
 
 
+def compute_sharpness_scores(data_dir):
+    image_files = glob.glob(os.path.join(data_dir, "images", "*.png"))
+    image_files = sorted(image_files, key=lambda x: int(x.split("/")[-1].split(".")[0]))
+    mask_files = glob.glob(os.path.join(data_dir, "masks", "*.png"))
+    mask_files = sorted(mask_files, key=lambda x: int(x.split("/")[-1].split(".")[0]))
+    assert len(image_files) == len(mask_files)
+
+    scores = []
+    for ii in range(len(image_files)):
+        image = cv2.imread(image_files[ii])
+        image = np.mean(image, -1)
+        # mask = cv2.imread(mask_files[ii]) / 255.0
+        # mask = mask[:, :, 0]
+        # image = image * mask
+        image_lp = cv2.Laplacian(image, cv2.CV_64F)
+        inter_image = image_lp - (np.sum(image_lp) / np.sum(mask))
+        score = np.sum(inter_image * inter_image) / np.sum(mask)
+        scores.append(score)
+
+    return np.array(scores)
+
+
+def compute_sharpness_score(img_tensor):
+    """
+    텐서 이미지의 샤프니스 스코어 계산.
+    낮을수록 샤프함 (blur measure = 1 / Laplacian variance).
+    img_tensor: (3, H, W) float32 CUDA tensor
+    """
+    gray = img_tensor.mean(dim=0, keepdim=True).unsqueeze(0)  # (1, 1, H, W)
+    lap_kernel = torch.tensor([[0, 1, 0], [1, -4, 1], [0, 1, 0]],
+                               dtype=torch.float32, device=img_tensor.device).view(1, 1, 3, 3)
+    lap = F.conv2d(gray, lap_kernel, padding=1)
+    return 1.0 / (lap.var() + 1e-6)
+
+
 # ==========================================
 # 2. SSIM
 # ==========================================
@@ -480,7 +515,7 @@ def train(args, cameras, init_points, init_scales=None):
     # But deform net output starts at 0 (weights initialized to 0)
     # So first few steps are effectively static anyway
 
-    for step in pbar:
+    for step in pbar: #for each iteration
         optimizer.zero_grad()
 
         # Coarse-to-fine integration steps
@@ -491,7 +526,7 @@ def train(args, cameras, init_points, init_scales=None):
 
         total_loss = 0.0
 
-        for ci in batch_idx:
+        for ci in batch_idx: #each batch. each camera in (random (views_per_step) cameras)
             cam = cameras[ci]
             gt_img = cam['image']
             cam_tx, cam_ty, cam_tz = cam['cam_pos']
@@ -523,11 +558,10 @@ def train(args, cameras, init_points, init_scales=None):
                                             args.img_h, args.img_w, fx, fy,
                                             cam_tx, cam_ty, cam_tz,
                                             render_depth=False, z_max=args.z_max)
-                # Sharp render should differ from blur sim
-                # If they're identical ¡æ no motion learned ¡æ penalize
-                sharp_diff = F.l1_loss(sharp_render, blur_sim)
-                # Maximize difference (minimize negative)
-                total_loss = total_loss - args.lambda_sharp_prior * sharp_diff / len(batch_idx)
+                # Sharp render should be sharp (low sharpness_score = more sharp)
+                # Minimize sharpness_score to encourage sharpness
+                sharpness_score = compute_sharpness_score(sharp_render)
+                total_loss = total_loss + args.lambda_sharp_prior * sharpness_score / len(batch_idx)
 
         # Deformation smoothness reg
         if args.lambda_deform_reg > 0:
