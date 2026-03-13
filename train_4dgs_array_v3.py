@@ -551,17 +551,17 @@ def train(args, cameras, init_points, init_scales=None):
             # === Sharp prior loss ===
             # Render at exposure midpoint ¡æ should look "sharper" than GT
             # Penalize if single-frame render is as blurry as GT
-            if args.lambda_sharp_prior > 0:
-                t_mid = (t_start + t_end) / 2.0
-                pos_mid, col_m, opa_m, sca_m, rot_m = model.get_gaussians_at(t_mid, use_deform=True)
-                sharp_render, _, _ = render(pos_mid, col_m, opa_m, sca_m, rot_m,
-                                            args.img_h, args.img_w, fx, fy,
-                                            cam_tx, cam_ty, cam_tz,
-                                            render_depth=False, z_max=args.z_max)
-                # Sharp render should be sharp (low sharpness_score = more sharp)
-                # Minimize sharpness_score to encourage sharpness
-                sharpness_score = compute_sharpness_score(sharp_render)
-                total_loss = total_loss + args.lambda_sharp_prior * sharpness_score / len(batch_idx)
+            # if args.lambda_sharp_prior > 0:
+            #     t_mid = (t_start + t_end) / 2.0
+            #     pos_mid, col_m, opa_m, sca_m, rot_m = model.get_gaussians_at(t_mid, use_deform=True)
+            #     sharp_render, _, _ = render(pos_mid, col_m, opa_m, sca_m, rot_m,
+            #                                 args.img_h, args.img_w, fx, fy,
+            #                                 cam_tx, cam_ty, cam_tz,
+            #                                 render_depth=False, z_max=args.z_max)
+            #     # Sharp render should be sharp (low sharpness_score = more sharp)
+            #     # Minimize sharpness_score to encourage sharpness
+            #     sharpness_score = compute_sharpness_score(sharp_render)
+            #     total_loss = total_loss + args.lambda_sharp_prior * sharpness_score / len(batch_idx)
 
         # Deformation smoothness reg
         if args.lambda_deform_reg > 0:

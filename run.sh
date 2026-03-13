@@ -23,7 +23,7 @@ python train_4dgs_array_v3.py \
   --img_w 80 \
   --img_h 60 \
   --num_points 500 \
-  --iters 500 \
+  --iters 5000 \
   --integration_steps 5 \
   --views_per_step 5 \
   --lambda_ssim 0.2 \
@@ -33,7 +33,7 @@ python train_4dgs_array_v3.py \
   --lr_scale 0.005 \
   --lr_deform 0.001 \
   --warmup_iters 20 \
-  --depth_scale 1000
+  --depth_scale 1
   #focal length, pixel size mm
   # te : sec
   # tr : sec
