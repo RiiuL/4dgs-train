@@ -19,7 +19,7 @@ python train_4dgs_array_v3.py \
   --data_dir "../imgall/PatterendCutball-close.jpg" \
   --focal_length 0.6 \
   --pixel_size 0.00185 \
-  --te 0.06 \
+  --te 0.061 \
   --img_w 80 \
   --img_h 60 \
   --num_points 500 \
